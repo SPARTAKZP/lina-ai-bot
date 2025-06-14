@@ -1,4 +1,3 @@
-
 import os
 import logging
 import asyncio
@@ -13,40 +12,45 @@ from telegram.ext import (
 )
 import uvicorn
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-BASE_URL = os.getenv("BASE_URL")
-WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"
+# === НАСТРОЙКИ ===
+BOT_TOKEN = os.getenv("BOT_TOKEN") or "8073520703:AAGVMWj0ayOSY85LfIgQWFEKnY9e6cALVWE"
+BASE_URL = os.getenv("BASE_URL") or "https://lina-ai-bot.up.railway.app"
+WEBHOOK_PATH = "/webhook/8073520703:AAGVMWj0ayOSY85LfIgQWFEKnY9e6cALVWE"
 
+# === ЛОГИ ===
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO)
 
+# === TELEGRAM SETUP ===
 bot = Bot(token=BOT_TOKEN)
 app = FastAPI()
 application = Application.builder().token(BOT_TOKEN).build()
 
+# === ПРОСТОЙ РУТ ДЛЯ ПРОВЕРКИ ===
 @app.get("/")
 async def root():
     return {"status": "Lina is alive"}
 
+# === КОМАНДЫ ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет, я Лина. Я слушаю тебя...")
 
 async def voice_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file = await update.message.voice.get_file()
-    await update.message.reply_text(
-        "Ммм, люблю, когда ты говоришь голосом... (здесь будет распознавание позже)"
-    )
+    await update.message.reply_text("Ммм, люблю, когда ты говоришь голосом... (здесь будет распознавание позже)")
 
 async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text
     response = f"Ты сказал: «{user_text}». Хочешь, я скажу тебе кое-что неприличное?.."
     await update.message.reply_text(response)
 
+# === ДОБАВЛЕНИЕ ХЕНДЛЕРОВ ===
 application.add_handler(CommandHandler("start", start))
 application.add_handler(MessageHandler(filters.VOICE, voice_handler))
 application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), text_handler))
 
+# === WEBHOOK ОБРАБОТЧИК ===
 @app.post(WEBHOOK_PATH)
 async def telegram_webhook(request: Request):
     data = await request.json()
@@ -54,6 +58,7 @@ async def telegram_webhook(request: Request):
     await application.process_update(update)
     return {"ok": True}
 
+# === УСТАНОВКА WEBHOOK С ЗАДЕРЖКОЙ ===
 @app.on_event("startup")
 async def on_startup():
     await asyncio.sleep(3)
@@ -61,5 +66,6 @@ async def on_startup():
     await bot.set_webhook(webhook_url)
     print(f"✅ Webhook установлен: {webhook_url}")
 
+# === ЗАПУСК УВИКОРНА ===
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
