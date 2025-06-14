@@ -2,46 +2,47 @@ import os
 import logging
 from fastapi import FastAPI, Request
 from telegram import Update, Bot
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    ContextTypes,
+    filters,
+)
 import uvicorn
 
-# === CONFIG ===
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-BASE_URL = os.getenv("BASE_URL")
+BOT_TOKEN = "7539472803:AAF3gWNZ2c6Y76NuFSp99WXBSwpnusfLVRs"
+BASE_URL = "https://lina-ai-bot.up.railway.app"
+WEBHOOK_PATH = "/webhook"
 
-# === LOGGING ===
 logging.basicConfig(level=logging.INFO)
-
-bot = Bot(BOT_TOKEN)
+bot = Bot(token=BOT_TOKEN)
 app = FastAPI()
 application = Application.builder().token(BOT_TOKEN).build()
 
-# === HANDLERS ===
+# === Команды ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет, я Лина. Готова слушать тебя...")
+    await update.message.reply_text("Привет, я Лина. Я слушаю тебя...")
 
-async def echo_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text
-    await update.message.reply_text(f"Ты сказал: «{user_text}». Хочешь, я скажу тебе кое-что неприличное?..")
-
-async def echo_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Ммм, ты прислал голосовое... (распознавание будет позже)")
+    response = f"Ты сказал: «{user_text}». Хочешь, я скажу тебе кое-что неприличное?.."
+    await update.message.reply_text(response)
 
 application.add_handler(CommandHandler("start", start))
-application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo_text))
-application.add_handler(MessageHandler(filters.VOICE, echo_voice))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
 
-# === WEBHOOK ===
-@app.post(f"/webhook/{BOT_TOKEN}")
-async def telegram_webhook(req: Request):
-    data = await req.json()
+# === Webhook ===
+@app.post(WEBHOOK_PATH)
+async def telegram_webhook(request: Request):
+    data = await request.json()
     update = Update.de_json(data, bot)
     await application.process_update(update)
     return {"ok": True}
 
 @app.on_event("startup")
-async def on_start():
-    webhook_url = f"{BASE_URL}/webhook/{BOT_TOKEN}"
+async def on_startup():
+    webhook_url = f"{BASE_URL}{WEBHOOK_PATH}"
     await bot.set_webhook(webhook_url)
     print(f"✅ Webhook установлен: {webhook_url}")
 
