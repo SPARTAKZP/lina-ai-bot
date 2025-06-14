@@ -42,7 +42,7 @@ application.add_handler(CommandHandler("start", start))
 application.add_handler(MessageHandler(filters.VOICE, voice_handler))
 application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), text_handler))
 
-# === WEBHOOK ОБРАБОТЧИК (без токена!) ===
+# === WEBHOOK ОБРАБОТЧИК (БЕЗ ТОКЕНА!) ===
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     data = await request.json()
@@ -53,7 +53,7 @@ async def telegram_webhook(request: Request):
 # === УСТАНОВКА WEBHOOK ПРИ СТАРТЕ ===
 @app.on_event("startup")
 async def on_startup():
-    webhook_url = f"{BASE_URL}/webhook"  # без токена!
+    webhook_url = f"{BASE_URL}/webhook"
     await bot.set_webhook(webhook_url)
     print(f"✅ Webhook установлен: {webhook_url}")
 
