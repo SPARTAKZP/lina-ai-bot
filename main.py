@@ -52,10 +52,10 @@ application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), text_h
 @app.post(f"/webhook/{BOT_TOKEN}")
 async def telegram_webhook(request: Request):
     data = await request.json()
+    print("📥 Получено сообщение от Telegram:", data)  # 👈 добавим это
     update = Update.de_json(data, bot)
     await application.process_update(update)
     return {"ok": True}
-
 
 @app.on_event("startup")
 async def on_startup():
