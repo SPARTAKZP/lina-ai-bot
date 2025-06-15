@@ -26,6 +26,9 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_han
 async def telegram_webhook(request: Request):
     data = await request.json()
     update = Update.de_json(data, bot)
+
+    if not application.running:
+        await application.initialize()
     await application.process_update(update)
     return {"ok": True}
 
